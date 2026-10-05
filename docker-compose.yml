@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: asteria
+      POSTGRES_PASSWORD: asteria
+      POSTGRES_DB: asteria
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asteria -d asteria"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://asteria:asteria@postgres:5432/asteria
+      REDIS_URL: redis://redis:6379/0
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      GMAIL_OAUTH_KEYS_PATH: /gmail-mcp/gcp-oauth.keys.json
+      GMAIL_TOKEN_PATH: /gmail-mcp/credentials.json
+      LINKEDIN_OAUTH_KEYS_PATH: /linkedin-mcp/oauth.keys.json
+      LINKEDIN_TOKEN_PATH: /linkedin-mcp/token.json
+      LINKEDIN_REDIRECT_URI: http://localhost:8000/api/v1/linkedin/callback
+      PAPERS_ROOT: /papers
+      CORS_ORIGINS: http://localhost:5173,http://localhost:5174
+      WORKSPACE_ROOT: /workspace
+      FILE_SEARCH_ROOTS: /host-home
+      LIBRARY_ROOT: /library
+      FUNNEL_ROOT: /funnel
+      SESSIONS_ROOT: /sessions
+      HOST_HOME: /host-home
+      BROWSER_HISTORY_ROOT: /browser-history
+      HISTORY_UTC_OFFSET: "+05:30"
+      WHISPER_ROOT: /models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${USERPROFILE}/.gmail-mcp:/gmail-mcp
+      - ${USERPROFILE}/.linkedin-mcp:/linkedin-mcp
+      - ./data/papers:/papers
+      - ./data/workspace:/workspace:ro
+      - ./data/library:/library
+      - ${USERPROFILE}:/host-home:ro
+      - ${USERPROFILE}/Desktop/Asteria:/funnel
+      - ./data/sessions:/sessions
+      - ./data/browser-history:/browser-history
+      - ./data/models:/models
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env and secrets
+.env
+.env.local
+*.pem
+**/gcp-oauth.keys.json
+**/.gmail-mcp/
+**/.linkedin-mcp/
+**/credentials.json
+**/oauth.keys.json
+# Machine-local SSL inspection CA (Avast / corporate proxy). Not a project secret.
+infrastructure/docker/certs/*.crt
+
+# Data and local runtime
+data/chroma/
+data/uploads/
+data/library/*
+!data/library/.gitkeep
+data/sessions/
+data/browser-history/
+data/papers/
+data/models/
+*.sqlite3
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
